@@ -1,0 +1,18 @@
+<launch>
+	
+	<!-- Publish world frame to which the robot will be connected to (for virtual joint in the SRDF)-->
+	<node pkg="tf" type="static_transform_publisher" name="world_frame_publisher" args="0 0 0 0 0 0 /world_frame /base_link 100"/>
+
+	<!-- Load URDF and SRDF -->
+	<param name="robot_description" command="xacro  '$(find pr2_tc_description)/urdf/pr2.xacro'"/>
+	<param name="robot_description_semantic" textfile="$(find pr2_tc_movit)/config/pr2.srdf" />
+
+	<!-- Joint and Robot State Publisher for simulated robot -->
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+	<param name="ns_prefix_robot" value="" />
+	<param name="robot_description_robot" value="robot_description" /> <!-- i.e. ns_prefix_robot + /robot_description -> e.g. /omnirob_group/robot_description -->
+
+	<rosparam command="load" file="$(find planner_param_config)/planner_config/planner_parameters_pr2.yaml"/>
+
+</launch>
