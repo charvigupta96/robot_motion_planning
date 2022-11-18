@@ -5,7 +5,7 @@
   <!-- +++++++++++++++++++++ ARGUMENTS +++++++++++++++++++++ -->
   
   <!-- Launch file arguments -->
-  <arg name="planning_group" default="omnirob_base"/>
+  <arg name="planning_group" default="fetch_base"/>
   
   <!-- Namespace prefix of URDF,SRDF and MOVEIT and Name of robot_description parameter on parameter server-->
   <arg name="ns_prefix_robot" 			default=""/>
@@ -14,7 +14,7 @@
   <!-- Planners to activate -->
   <arg name="start_uni_planner" default="false"/>
   <arg name="start_bi_planner" 	default="true"/>
-  <arg name="planning_config" 	default="planner_parameters_omnirob"/>
+  <arg name="planning_config" 	default="planner_parameters_fetch"/>
   
   <!-- +++++++++++++++++++++ PARAMETERS +++++++++++++++++++++ -->
   

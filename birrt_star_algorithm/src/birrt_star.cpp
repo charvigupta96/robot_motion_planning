@@ -98,6 +98,13 @@ BiRRTstarPlanner::BiRRTstarPlanner(string planning_group)
 
     //Get the joint names
     m_joint_names = m_KDLRobotModel->getJointNames();
+    //Printing the joint names
+    ROS_INFO("Joint Names:");
+    for (int i = 0; i < m_joint_names.size(); i++)
+    {
+        ROS_INFO("%s", m_joint_names[i].c_str());
+    }
+    
 
     //Number of joints
     m_num_joints = m_KDLRobotModel->getNumJoints();
@@ -385,6 +392,9 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     //Check dimension of config
     if(start_conf.size() != m_num_joints || goal_conf.size() != m_num_joints)
     {
+        ROS_INFO("[InitPlanner3]Start Configuration Size: %d", (int)start_conf.size());
+        ROS_INFO("Goal Configuration Size: %d", (int)goal_conf.size());
+        ROS_INFO("Number of Joints: %d", m_num_joints);
         ROS_ERROR("Dimension of configuration vector does not match the number of joints in the planning group!");
         return false;
     }
@@ -625,6 +635,9 @@ bool BiRRTstarPlanner::init_planner(vector<double> start_conf, vector<double> go
     //Check dimension of config
     if(start_conf.size() != m_num_joints || goal_conf.size() != m_num_joints)
     {
+        ROS_INFO("[InitPlanner2]Start Configuration Size: %d", (int)start_conf.size());
+        ROS_INFO("Goal Configuration Size: %d", (int)goal_conf.size());
+        ROS_INFO("Number of Joints: %d", m_num_joints);
         ROS_ERROR("Dimension of configuration vector does not match the number of joints in the planning group!");
         return false;
     }
@@ -869,6 +882,8 @@ bool BiRRTstarPlanner::init_planner(vector<double> start_conf, vector<double> ee
     //Check dimension of config
     if(start_conf.size() != m_num_joints)
     {
+        ROS_INFO("[InitPlanner1]Start Configuration Size: %d", (int)start_conf.size());
+        ROS_INFO("Number of Joints: %d", m_num_joints);
         ROS_ERROR("Dimension of configuration vector does not match the number of joints in the planning group!");
         return false;
     }
@@ -6282,7 +6297,7 @@ bool BiRRTstarPlanner::interpolateConfigurations(Node near_node, Node end_node, 
 //            }
 
             //Check whether task error out of tolerance
-            //if(m_max_task_error_interpolation < task_error_interpolation_norm)
+            // if(m_max_task_error_interpolation < task_error_interpolation_norm)
             if(task_error_within_bounds == false)
             {
                 //Set interpolation result to false
@@ -8716,6 +8731,8 @@ void BiRRTstarPlanner::writePlannerStatistics(char *statistics_file, char *cost_
 {
     //+++++++++ Write planner statistics to file ++++++++
 
+    //print file path
+    cout<<"Statistics file path: "<<statistics_file<<endl;
     //Remove the planner statistics file
     if( remove( statistics_file ) != 0 )
     {
