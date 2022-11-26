@@ -1940,7 +1940,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
 {
 
     // ----- Path to files storing the result joint and endeffector Trajectory of the RRT* planner-----------
-
+    cout<<"RP1"<<endl;
     stringstream convert_planner_run_number; // stringstream used for the conversion
     string string_planner_run_number; //string which will contain the result
     convert_planner_run_number << planner_run_number; //add the value of Number to the characters in the stream
@@ -1959,7 +1959,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
     else
         m_planner_type = "bi_informed_rrt_star";
 
-
+    cout<<"RP2"<<endl;
     //Set path to the file that will store the planned joint trajectory
     string folder_path = m_planner_package_path + "/data/"+ m_planner_type +"/"+  scenario_name  + "_joint_trajectory_run_" + string_planner_run_number +".txt";
     m_file_path_joint_trajectory = new char[folder_path.size() + 1];
@@ -1974,7 +1974,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
     m_file_path_ee_trajectory[folder_path.size()] = '\0'; // don't forget the terminating 0
     //cout<<m_file_path_ee_trajectory<<endl;
 
-
+    cout<<"RP3"<<endl;
     // ----- Path to files storing RRT* planner statistics-----------
 
     //Set path to the file that will store the planner statistics
@@ -1991,9 +1991,10 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
     m_file_path_cost_evolution[folder_path.size()] = '\0'; // don't forget the terminating 0
     //cout<<m_file_path_cost_evolution<<endl;
 
-
+    cout<<"RP4"<<endl;
     // ---------- RRT* planner Initialization -----------
 
+    cout<<"Check1"<<endl;
     if(flag_iter_or_time == 0)
     {
         //Init maximum permitted planner iterations
@@ -2006,7 +2007,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
     else
         ROS_ERROR("You need to set either maximum planner iterations or time!");
 
-
+    cout<<"Check2"<<endl;
     //Set number of executed planner iterations to zero
     m_executed_planner_iter = 0;
 
@@ -2028,12 +2029,12 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
     //Planner progress message
     std_msgs::Float32 msg_planner_progress;
 
-
+    cout<<"Check3"<<endl;
     // ------------ Check whether Planning is needed by trying to directly connect the root nodes -----------
 
     //Try to connect the two RRT* Trees given the root nodes of "tree_A" and "tree_B"
     connectGraphsInterpolation(tree_A, tree_A->nodes[0], tree_B->nodes[0], show_tree_vis);
-
+    cout<<"Check4"<<endl;
     //Check whether solution path is available after connectGraphsInterpolation
     bool no_planning = m_solution_path_available;
     if(no_planning)
@@ -2044,7 +2045,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
 
         ROS_INFO_STREAM("No Planning required. Straight line connecting start and goal config in configuration space is valid.");
     }
-
+    cout<<"RP5"<<endl;
     // ------------ RRT* Planning -----------
 
     //Variable for timer (measuring time required to find a first solution path and total planning time)
@@ -2344,7 +2345,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
 
     }// end of main planner loop
 
-
+    cout<<"RP6"<<endl;
     //Get time elapsed
     gettimeofday(&m_timer, NULL);
     double time_planning_final = m_timer.tv_sec+(m_timer.tv_usec/1000000.0);
@@ -2393,7 +2394,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
     ROS_INFO_STREAM("Total number of rewire operations : "<<m_start_tree.num_rewire_operations + m_goal_tree.num_rewire_operations);
 
     ROS_INFO_STREAM("************************************************************");
-
+    cout<<"RP7"<<endl;
      //Consistency check
     no_two_parents_check(tree_A);
     no_two_parents_check(tree_B);
@@ -2406,7 +2407,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
 
     //Write Planner Statistics to File
     writePlannerStatistics(m_file_path_planner_statistics, m_file_path_cost_evolution);
-
+    cout<<"RP8"<<endl;
     //Return planner result (true = success, false = failure)
     return m_solution_path_available;
 
@@ -6298,21 +6299,21 @@ bool BiRRTstarPlanner::interpolateConfigurations(Node near_node, Node end_node, 
 
             //Check whether task error out of tolerance
             // if(m_max_task_error_interpolation < task_error_interpolation_norm)
-            if(task_error_within_bounds == false)
-            {
-                //Set interpolation result to false
-                interpolation_success = false;
+            // if(task_error_within_bounds == false)
+            // {
+            //     //Set interpolation result to false
+            //     interpolation_success = false;
 
-                cout<<"Error for "<<inc<<"-th joint config along edge is not within constraint coordinate bounds!!"<<endl;
+            //     cout<<"Error for "<<inc<<"-th joint config along edge is not within constraint coordinate bounds!!"<<endl;
 
-                //Leave interpolation loop
-                break;
-            }
-            else
-            {
-                //cout<<"Error ok!!"<<endl;
+            //     //Leave interpolation loop
+            //     break;
+            // }
+            // else
+            // {
+            //     //cout<<"Error ok!!"<<endl;
 
-            }
+            // }
 
         }
         //-------------------

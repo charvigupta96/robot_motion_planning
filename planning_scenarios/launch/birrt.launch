@@ -1,3 +1,3 @@
 <launch>
-	<node pkg="planning_scenarios" type="run_door_planning" name="run_door_scenario_node" output="screen" args="bi_rrt_star arm_with_torso 100 0 1000 1"/>
+	<node pkg="planning_scenarios" type="run_door_planning" name="run_door_scenario_node" launch-prefix="xterm -e gdb --args"/>
 </launch>

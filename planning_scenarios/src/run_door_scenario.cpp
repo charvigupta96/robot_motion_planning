@@ -289,6 +289,7 @@ int main(int argc, char** argv)
     {
         if (search_direction == uni)
         {
+            cout<<"DoorUni"<<endl;
             //Run planner
             // Params: search_space, max_iter, visu_on_off, sleep_between_iters, current_run_number
             success = uni_planner.run_planner(1, FLAG_ITERATIONS_OR_TIME, MAX_ITERATIONS_TIME, RVIZ_SHOW_TREE, 0.0, run);
@@ -298,6 +299,7 @@ int main(int argc, char** argv)
         }
         else if (search_direction == bi)
         {
+            cout<<"DoorBi"<<endl;
             //Run planner
             // Params: search_space, max_iter, visu_on_off, sleep_between_iters, current_run_number
             success = bi_planner.run_planner(1, FLAG_ITERATIONS_OR_TIME, MAX_ITERATIONS_TIME, RVIZ_SHOW_TREE, 0.0, run);
@@ -307,15 +309,15 @@ int main(int argc, char** argv)
         }
         else
             ROS_ERROR("Unknown Planner Type!!!");
-
+        cout<<"DoorHere"<<endl;
         //End of "run"-th planning run
         cout<<"Planner run "<< run <<" finished with: "<<(success == true ? "success":"failure")<<endl;
     }
-
+    cout<<"DoorHere2"<<endl;
 
     //Shutdown node
     ros::shutdown();
-
+    cout<<"DoorHere3"<<endl;
     return 0;
 }
 
