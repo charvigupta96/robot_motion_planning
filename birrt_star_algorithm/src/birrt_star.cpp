@@ -399,6 +399,8 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
         return false;
     }
 
+
+
     //Convert start and goal configuration into KDL Joint Array
     KDL::JntArray start_configuration = m_RobotMotionController->Vector_to_JntArray(start_conf);
     KDL::JntArray goal_configuration = m_RobotMotionController->Vector_to_JntArray(goal_conf);
@@ -429,7 +431,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     vector<double> ee_start_pose = computeEEPose(start_configuration);
     vector<double> ee_goal_pose = computeEEPose(goal_configuration);
 
-
+    ROS_INFO("This is not the place");
 
     //Set pose of task frame to start ee pos
 //    if(m_constraint_active)
@@ -451,7 +453,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     else
         ROS_ERROR("Requested planner search space does not exist!!!");
 
-
+    ROS_INFO("This is also not the place");
     //---Create Goal Node for RRT* Tree
     Node goal_node;
     goal_node.node_id = 0; //negative index to avoid using goal node as nearest neighbour (goal node only considered in REWIRE function)
@@ -468,7 +470,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     //Add goal Node to the tree
     m_goal_tree.nodes.push_back(goal_node);
     m_goal_tree.num_nodes++;
-
+    ROS_INFO("This is also also not the place");
     //Add sphere to visualize goal node
     visualization_msgs::Marker goal_node_marker_; //terminal nodes
     goal_node_marker_.id = 0;
@@ -495,7 +497,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     goal_node_marker_.pose.position.z = goal_node.ee_pose[2];
     //Add start node to marker
     m_terminal_nodes_marker_array_msg.markers.push_back(goal_node_marker_);
-
+    ROS_INFO("This is also also also not the place");
 
 
     //--- Create Start Node for RRT* Tree
@@ -513,7 +515,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     //Add start Node to the tree
     m_start_tree.nodes.push_back(start_node);
     m_start_tree.num_nodes++;
-
+   ROS_INFO("This is also also also also not the place");
     //Add sphere to visualize goal node
     visualization_msgs::Marker start_node_marker_; //terminal nodes
     start_node_marker_.id = 1;
@@ -540,11 +542,11 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     start_node_marker_.pose.position.z = start_node.ee_pose[2];
     //Add start node to marke
     m_terminal_nodes_marker_array_msg.markers.push_back(start_node_marker_);
-
+ROS_INFO("This is also also also also also not the place");
 
     //Publish start and goal node
     m_tree_terminal_nodes_pub.publish(m_terminal_nodes_marker_array_msg);
-
+ROS_INFO("pub start goal");
 
     //Save start and goal ee_pose
     m_ee_start_pose = ee_start_pose;
@@ -560,7 +562,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     m_start_tree_node_pub.publish(m_start_tree_add_nodes_marker);
     m_goal_tree_add_nodes_marker.points.empty();
     m_goal_tree_node_pub.publish(m_goal_tree_add_nodes_marker);
-
+    ROS_INFO("Trying to empty nodes");
     //Empty array of edges
     //m_start_tree_add_edge_marker_array_msg.markers.empty();
     m_start_tree_add_edge_marker_array_msg.markers.clear();
@@ -568,7 +570,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     m_goal_tree_add_edge_marker_array_msg.markers.clear();
     m_goal_tree_edge_pub.publish(m_goal_tree_add_edge_marker_array_msg);
 
-
+    ROS_INFO("Trying to empty edges");
     //Delete solution path
     visualization_msgs::Marker empty_solution_path_marker;
     empty_solution_path_marker.id = 1;
@@ -585,6 +587,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     empty_solution_path_marker.color.a = 1.0;
     m_ee_solution_path_pub.publish(empty_solution_path_marker);
 
+    ROS_INFO("Trying to vis");
 
     //Initialization of Variables required for Ellipse Sampling
     if(search_space == 0) //Planning in Control Space
@@ -592,10 +595,12 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
         //TODO Ellipse Sampling Initialization
     }
     else if (search_space == 1) //Planning in Joint Space
-        jointConfigEllipseInitialization();
+        {jointConfigEllipseInitialization();
+        ROS_INFO("In Search SPace");}
     else
         ROS_ERROR("Requested planner search space does not exist!!!");
 
+    ROS_INFO("This is also also also also also also not the place");
 
     //Iteration and time when first and last solution is found
     m_first_solution_iter = 10000;
@@ -610,11 +615,13 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
     //If planning is performed in the map frame
     if(m_planning_frame == "/map")
     {
+        ROS_INFO("In the map");
         //Get current pose of robot in the map frame
         tf::TransformListener listener;
         try {
             listener.waitForTransform("/map", m_ns_prefix_robot + "base_link", ros::Time(0), ros::Duration(10.0) );
             listener.lookupTransform("/map", m_ns_prefix_robot + "base_link", ros::Time(0), m_transform_map_to_base);
+            ROS_INFO("In the transform");
             m_transform_map_to_base_available = true;
         } catch (tf::TransformException ex) {
             ROS_ERROR("%s",ex.what());
@@ -624,6 +631,7 @@ bool BiRRTstarPlanner::init_planner(char *start_goal_config_file, int search_spa
         }
     }
 
+    ROS_INFO("Everything Wenttt Fineeee");
     //Everything went fine
     return true;
 
@@ -5112,13 +5120,19 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
         id_m1_rev.resize(m_num_joints_revolute);
     }
 
+    std::cout << "resizing the vector" << std::endl;
+
     Eigen::VectorXd  a1_prism;
     Eigen::VectorXd  id_m1_prism;
-    if(m_num_joints_prismatic >= 2)
+    std::cout<<m_num_joints_prismatic<<std::endl;
+    // if(m_num_joints_prismatic >= 2)
     {
+        std::cout<<"Its Reized"<<std::endl;
         a1_prism.resize(m_num_joints_prismatic);
         id_m1_prism.resize(m_num_joints_prismatic);
     }
+
+    std::cout << "If the size is greater than 2" << std::endl;
 
     //Current Joint Index
     int joint_idx = 0;
@@ -5126,26 +5140,43 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
     int joint_idx_prism = 0;
     for (int k = 0 ; k < m_manipulator_chain.getNrOfSegments(); k++)
      {
+        std::cout << "In the for loop first statement" << std::endl;
          if(m_manipulator_chain.getSegment(k).getJoint().getTypeName() != "None")
          {
+            std::cout << "1" << std::endl;
              //Collect sum of squares for prismatic and revolute joints
              if(m_manipulator_chain.getSegment(k).getJoint().getTypeName() != "RotAxis")
-             {
+             {  std::cout << "2" << std::endl;
                 m_ball_center_prismatic[joint_idx_prism] = (m_config_start_pose[joint_idx] + m_config_goal_pose[joint_idx]) / 2.0;
-                if(m_start_tree.nodes[0].cost_h.prismatic > 0.00001)
-                    a1_prism[joint_idx_prism] = (m_config_goal_pose[joint_idx] - m_config_start_pose[joint_idx]) / m_start_tree.nodes[0].cost_h.prismatic; //m_start_tree.nodes[0].cost_h.total = heuristic for start node config
-                else
-                    a1_prism[joint_idx_prism] = 0.0;
+                std::cout << "3" << std::endl;
+                if(m_start_tree.nodes[0].cost_h.prismatic > 0.00001){
+                       std::cout << "3.5" << std::endl;
+                a1_prism[joint_idx_prism] = (m_config_goal_pose[joint_idx] - m_config_start_pose[joint_idx]) / m_start_tree.nodes[0].cost_h.prismatic; //m_start_tree.nodes[0].cost_h.total = heuristic for start node config   
+                std::cout << "4" << std::endl;
+                }
+                    
+                else{
+                a1_prism[joint_idx_prism] = 0.0;
+                std::cout << "5" << std::endl;
+                }
+                    
 
-                if (joint_idx_prism == 0)
-                    id_m1_prism[joint_idx_prism] = 1.0;
-                else
-                    id_m1_prism[joint_idx_prism] = 0.0;
+                if (joint_idx_prism == 0){
+                id_m1_prism[joint_idx_prism] = 1.0;
+                std::cout << "6" << std::endl;
+                }
+                    
+                else{
+                id_m1_prism[joint_idx_prism] = 0.0;
+                std::cout << "7" << std::endl;
+                }
+                    
 
                 joint_idx_prism++;
              }
              else
              {
+                std::cout << "3" << std::endl;
                  m_ball_center_revolute[joint_idx_rev] = (m_config_start_pose[joint_idx] + m_config_goal_pose[joint_idx]) / 2.0;
                  if(m_start_tree.nodes[0].cost_h.revolute > 0.00001)
                     a1_rev[joint_idx_rev] = (m_config_goal_pose[joint_idx] - m_config_start_pose[joint_idx]) / m_start_tree.nodes[0].cost_h.revolute; //m_start_tree.nodes[0].cost_h.total = heuristic for start node config
@@ -5175,13 +5206,14 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
 //            id_m1_rev[j] = 0.0;
 //    }
 
-
+    std::cout << "10" << std::endl;
     //Matrix required to compute matrix "C"
     Eigen::MatrixXd matrix_M_rev;
     //Diagonal matrix required to compute matrix "C"
     Eigen::MatrixXd diag_matrix_rev;
     if(m_num_joints_revolute != 0)
     {
+        std::cout << "4" << std::endl;
         matrix_M_rev.resize(m_num_joints_revolute, m_num_joints_revolute);
         matrix_M_rev = a1_rev*id_m1_rev.transpose();
 
@@ -5192,14 +5224,17 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
         //std::cout << "Its singular values are:" << std::endl << svd_rev.singularValues() << std::endl;
         //std::cout << "Its left singular vectors are the columns of the thin U matrix:" << std::endl << svd_rev.matrixU() << std::endl;
         //std::cout << "Its right singular vectors are the columns of the thin V matrix:" << std::endl << svd_rev.matrixV() << std::endl;
-
+        std::cout << "4" << std::endl;
         //Compute "diag_matrix" required for "C"
         for (int i = 0; i < diag_matrix_rev.cols(); i++)
         {
+            std::cout << "5" << std::endl;
             for (int j = 0; j < diag_matrix_rev.cols(); j++)
             {
+                std::cout << "6" << std::endl;
                 if (i == j)
                 {
+                    std::cout << "7" << std::endl;
                     //Computations for Matrix "M"
                     if(i < diag_matrix_rev.cols() - 1)
                         diag_matrix_rev(i,j) = 1.0;
@@ -5208,6 +5243,7 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
                 }
                 else
                 {
+                    std::cout << "8" << std::endl;
                     //Computations for Matrix "M"
                     diag_matrix_rev(i,j) = 0.0;
                 }
@@ -5216,7 +5252,7 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
 
         //Matrix "C" representing rotation from the hyperellipsoid frame to the world frame
         m_rotation_C_revolute = svd_rev.matrixU()*diag_matrix_rev*svd_rev.matrixV();
-
+        std::cout << "9" << std::endl;
     }
 
     //Matrix required to compute matrix "C"
@@ -5225,6 +5261,7 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
     Eigen::MatrixXd diag_matrix_prism;
     if(m_num_joints_prismatic >= 2)
     {
+        std::cout << "10" << std::endl;
         matrix_M_prism.resize(m_num_joints_prismatic, m_num_joints_prismatic);
         matrix_M_prism = a1_prism*id_m1_prism.transpose();
 
@@ -5234,13 +5271,16 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
         //std::cout << "Its singular values are:" << std::endl << svd_prism.singularValues() << std::endl;
         //std::cout << "Its left singular vectors are the columns of the thin U matrix:" << std::endl << svd_prism.matrixU() << std::endl;
         //std::cout << "Its right singular vectors are the columns of the thin V matrix:" << std::endl << svd_prism.matrixV() << std::endl;
-
+        std::cout << "11" << std::endl;
         for (int i = 0; i < diag_matrix_prism.cols(); i++)
         {
+            std::cout << "12" << std::endl;
             for (int j = 0; j < diag_matrix_prism.cols(); j++)
             {
+                std::cout << "13" << std::endl;
                 if (i == j)
                 {
+                    std::cout << "14" << std::endl;
                     //Computations for Matrix "M"
                     if(i < diag_matrix_prism.cols() - 1)
                         diag_matrix_prism(i,j) = 1.0;
@@ -5249,12 +5289,13 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
                 }
                 else
                 {
+                    std::cout << "15" << std::endl;
                     //Computations for Matrix "M"
                     diag_matrix_prism(i,j) = 0.0;
                 }
             }
         }
-
+        std::cout << "16" << std::endl;
         //Matrix "C" representing rotation from the hyperellipsoid frame to the world frame
         m_rotation_C_prismatic = svd_prism.matrixU()*diag_matrix_prism*svd_prism.matrixV();
     }

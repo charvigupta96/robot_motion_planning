@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     //Path to the file containing the start and goal config for the scenario
     char* file_path_start_goal_config;
     // string folder_path = terminal_configs_path + "/Start_Goal_Configurations/" + PLANNING_GROUP + "_door_start_goal_config.txt";
-    string folder_path = terminal_configs_path + "/Start_Goal_Configurations/omnirob_lbr_sdh_door_start_goal_config.txt";
+    string folder_path = "/home/rathin/Documents/Fall2022/16782/planning_project/src/robot_motion_planning/planning_scenarios/Start_Goal_Configurations/omnirob_lbr_sdh_door_start_goal_config.txt";
     file_path_start_goal_config = new char[folder_path.size() + 1];
     copy(folder_path.begin(), folder_path.end(), file_path_start_goal_config);
     file_path_start_goal_config[folder_path.size()] = '\0'; // don't forget the terminating 0
