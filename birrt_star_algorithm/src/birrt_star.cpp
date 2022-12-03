@@ -5572,7 +5572,7 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray()
 KDL::JntArray BiRRTstarPlanner::RGD(KDL::JntArray rConfig, KDL::JntArray goalConfig){
     double radius = 1.0;
     int k = 100;
-    double lamda = 0.3; //lamda step size (0.05)
+    double lamda = 0.05; //lamda step size (0.05)
     KDL::JntArray previous_config = rConfig;
     for(int i=0;i<k;i++){
         //performing gradient descent
@@ -5611,6 +5611,7 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray(KDL::JntArray goalCon
 {
     KDL::JntArray rand_conf, rand_conf_rgd;
     rand_conf = KDL::JntArray(m_num_joints);
+    bool is_rgd_active = false;
     rand_conf_rgd = KDL::JntArray(m_num_joints);
     //Configuration validity checks
     bool collision_free = false;
@@ -5621,8 +5622,12 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray(KDL::JntArray goalCon
     {
         //Get random configuration
         rand_conf = m_RobotMotionController->getRandomConf(m_env_size_x, m_env_size_y);
-        rand_conf_rgd = RGD(rand_conf, goalConfig);
-        rand_conf = rand_conf_rgd;
+        if(is_rgd_active){
+            cout<<"Random Gradient Descent is active"<<endl;
+            rand_conf_rgd = RGD(rand_conf, goalConfig);
+            rand_conf = rand_conf_rgd;
+        }
+
         //cout<<"-------------------------"<<endl;
         //cout<<"rand config in map frame:"<<endl;
         //for(int i = 0 ; i < m_num_joints ; i++)
