@@ -2161,9 +2161,8 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
             else
             {
                 //Sample Joint configuration uniformly
-                config_rand = sampleJointConfig_JntArray();
+                config_rand = sampleJointConfig_JntArray(m_RobotMotionController->Vector_to_JntArray(tree_B->nodes[0].config));
             }
-
 
             //Set Data for random new Node
             x_rand.node_id = tree_A->nodes.size();
@@ -5569,14 +5568,50 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray()
 
 }
 
+//Random Gradient Descent
+KDL::JntArray BiRRTstarPlanner::RGD(KDL::JntArray rConfig, KDL::JntArray goalConfig){
+    double radius = 1.0;
+    int k = 100;
+    double lamda = 0.3; //lamda step size (0.05)
+    KDL::JntArray previous_config = rConfig;
+    for(int i=0;i<k;i++){
+        //performing gradient descent
+        if(!m_FeasibilityChecker->isConfigValid(rConfig)){
+            rConfig = previous_config;
+            break;
+        }
 
+        for(int j=0;j<rConfig.rows();j++){
+            bool goal_reached = true;
+            for(int l=0;l<rConfig.rows();l++){
+                if(fabs(rConfig(l)-goalConfig(l))>radius){
+                    goal_reached = false;
+                    break;
+                }
+            }
+            if(goal_reached == true){
+                break;
+            }
+            previous_config = rConfig;
+            if(rConfig(j)-goalConfig(j)>0){
+                rConfig(j) = rConfig(j)-lamda;
+            }
+            else{
+                rConfig(j) = rConfig(j)+lamda;
+            }
+            // rConfig(j) = rConfig(j) + lamda*(goalConfig(j)-rConfig(j));
+
+        }
+    }
+    return rConfig;
+}
 
 //Sample Configuration
-KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray()
+KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray(KDL::JntArray goalConfig)
 {
-    KDL::JntArray rand_conf;
+    KDL::JntArray rand_conf, rand_conf_rgd;
     rand_conf = KDL::JntArray(m_num_joints);
-
+    rand_conf_rgd = KDL::JntArray(m_num_joints);
     //Configuration validity checks
     bool collision_free = false;
     //bool above_platform = false;
@@ -5586,7 +5621,8 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray()
     {
         //Get random configuration
         rand_conf = m_RobotMotionController->getRandomConf(m_env_size_x, m_env_size_y);
-	
+        rand_conf_rgd = RGD(rand_conf, goalConfig);
+        rand_conf = rand_conf_rgd;
         //cout<<"-------------------------"<<endl;
         //cout<<"rand config in map frame:"<<endl;
         //for(int i = 0 ; i < m_num_joints ; i++)

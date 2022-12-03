@@ -330,10 +330,12 @@ class BiRRTstarPlanner //: public robot_interface_definition::RobotInterface
     //Sample Configuration (as JntArray) from Ellipse containing configurations that may improve current solution
     KDL::JntArray sampleJointConfigfromEllipse_JntArray();
 
+    //Random Gradient Descent
+    KDL::JntArray RGD(KDL::JntArray rconfig, KDL::JntArray goalConfig);
     //Sample Configuration (as std::vector)
     vector<double> sampleJointConfig_Vector();
     //Sample Configuration (as JntArray)
-    KDL::JntArray sampleJointConfig_JntArray();
+    KDL::JntArray sampleJointConfig_JntArray(KDL::JntArray goalConfig);
 
     //Sample Configuration around mean config vector(as std::vector)
     vector<double> sampleJointConfig_Vector(vector<double> mean_config, double std_dev);
