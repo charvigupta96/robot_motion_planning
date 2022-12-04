@@ -2153,7 +2153,7 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
             //Sample from the informed subject once a solution is available
             if(m_informed_sampling_active == true && m_solution_path_available == true)
             {
-                config_rand = sampleJointConfigfromEllipse_JntArray();
+                config_rand = sampleJointConfigfromEllipse_JntArray(m_RobotMotionController->Vector_to_JntArray(tree_B->nodes[0].config));
 
                 //Draw the ellipse for the Base Configuration Space
                 drawBaseEllipse();
@@ -2210,10 +2210,10 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
 
 
             //Near vertices set (in the vicinity of x_new)
-            vector<int> near_nodes;
+            vector<int> near_nodes,near_nodes_B;
             bool tree_extend_BP = false;
             //Consider nearest neighbours for parent search when "expandTree" failed or a solution path has been found
-            if((m_tree_optimization_active == true && m_solution_path_available == true))// || tree_extend_NN == false)
+            if((m_tree_optimization_active == true))// || tree_extend_NN == false)
             {
                 //Find the set of vertices in the vicinity of x_new
                 near_nodes = find_near_vertices_interpolation(tree_A, x_new);
@@ -2248,7 +2248,23 @@ bool BiRRTstarPlanner::run_planner(int search_space, bool flag_iter_or_time, dou
 
                 //Search for nearest neighbour to x_new in tree "tree_B"
                 Node x_connect = find_nearest_neighbour_interpolation(tree_B, x_new.config);
-
+            //     //Search for nearest neighbour to x_new in tree "tree_B"
+            //     Node nn_node_B = find_nearest_neighbour_interpolation(tree_B, x_new.config);
+            //     Node x_connect;
+            //     Edge e_new_B;
+            //     if((m_tree_optimization_active == true && m_solution_path_available == true))// || tree_extend_NN == false)
+            // {
+            //     //Find the set of vertices in the vicinity of x_new
+            //     near_nodes_B = find_near_vertices_interpolation(tree_B, x_new);
+            //     cout<<"NN Node B: "<<nn_node_B.node_id<<endl;
+            //     //Choose Parent for x_new minimizing the cost of reaching x_new (given the set of vertices surrounding x_new as potential parents)
+            //     x_connect = get_node_parent_interpolation(tree_B, near_nodes_B, nn_node_B, e_new_B, x_new, show_tree_vis);
+            //     cout<<"X Connect: "<<x_connect.node_id<<endl;
+            // }
+            // else{
+            //     x_connect = nn_node_B;
+            // }
+            
                 //Variable for timer
                 //gettimeofday(&m_timer, NULL);
                 //double time_connect_graphs_start = m_timer.tv_sec+(m_timer.tv_usec/1000000.0);
@@ -5304,7 +5320,7 @@ void BiRRTstarPlanner::jointConfigEllipseInitialization()
 
 
 //Sample Configuration (as JntArray) from Ellipse containing configurations that may improve current solution
-KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray()
+KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray(KDL::JntArray goalConfig)
 {
 
 //    //Variable for timer
@@ -5312,8 +5328,10 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray()
 //    double time_start = m_timer.tv_sec+(m_timer.tv_usec/1000000.0);
 
     //Random config sampled from ellipse -> to be returned by the function
-    KDL::JntArray rand_conf_array;
+    KDL::JntArray rand_conf_array, rand_conf_rgd_array;
     rand_conf_array = KDL::JntArray(m_num_joints);
+    bool is_rgd_active = true;
+    rand_conf_rgd_array = KDL::JntArray(m_num_joints);
 
     //Random configuration sampled from 7-dimensional unit ball
     KDL::JntArray ball_conf_array;
@@ -5341,7 +5359,12 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray()
 
         //Get random configuration (for entire robot)
         ball_conf_array = m_RobotMotionController->getRandomConf(m_env_size_x, m_env_size_y);
-
+        
+        if(is_rgd_active){
+            // cout<<"Random Gradient Descent is active"<<endl;
+            rand_conf_rgd_array = RGD(ball_conf_array, goalConfig);
+            ball_conf_array = rand_conf_rgd_array;
+        }
         //Transform config sample from map frame into base_link frame (used when planning is performed with a real robot running a localization)
         //if(m_planning_frame == "/map" && (m_planning_group == "omnirob_base" || m_planning_group == "omnirob_lbr_sdh"))
         if(m_planning_frame == "/map" && m_num_joints_prismatic >= 2 && m_num_joints_revolute > 0) //-> m_num_joints_prismatic >= 2, m_num_joints_revolute > 1 means robot base is involved in planning
@@ -5570,9 +5593,9 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfigfromEllipse_JntArray()
 
 //Random Gradient Descent
 KDL::JntArray BiRRTstarPlanner::RGD(KDL::JntArray rConfig, KDL::JntArray goalConfig){
-    double radius = 1.0;
+    double radius = 1.3;
     int k = 100;
-    double lamda = 0.05; //lamda step size (0.05)
+    double lamda = 0.3; //lamda step size (0.05)
     KDL::JntArray previous_config = rConfig;
     for(int i=0;i<k;i++){
         //performing gradient descent
@@ -5611,7 +5634,7 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray(KDL::JntArray goalCon
 {
     KDL::JntArray rand_conf, rand_conf_rgd;
     rand_conf = KDL::JntArray(m_num_joints);
-    bool is_rgd_active = false;
+    bool is_rgd_active = true;
     rand_conf_rgd = KDL::JntArray(m_num_joints);
     //Configuration validity checks
     bool collision_free = false;
@@ -5623,7 +5646,7 @@ KDL::JntArray BiRRTstarPlanner::sampleJointConfig_JntArray(KDL::JntArray goalCon
         //Get random configuration
         rand_conf = m_RobotMotionController->getRandomConf(m_env_size_x, m_env_size_y);
         if(is_rgd_active){
-            cout<<"Random Gradient Descent is active"<<endl;
+            // cout<<"Random Gradient Descent is active"<<endl;
             rand_conf_rgd = RGD(rand_conf, goalConfig);
             rand_conf = rand_conf_rgd;
         }
@@ -6490,6 +6513,387 @@ bool BiRRTstarPlanner::choose_node_parent_control(Rrt_star_tree *tree, vector<in
 }
 
 
+Node BiRRTstarPlanner::get_node_parent_interpolation(Rrt_star_tree *tree, vector<int> near_vertices, Node nn_node, Edge &e_new, Node &x_new, bool show_tree_vis)
+{
+
+//    //Variable for timer
+//    gettimeofday(&m_timer, NULL);
+//    double time_start = m_timer.tv_sec+(m_timer.tv_usec/1000000.0);
+    Node required_parent=nn_node;
+    //Return if there are no near nodes
+    if(near_vertices.empty()){
+        cout<<"Empty near vertices!!"<<endl;
+        return required_parent;
+    }
+
+    //-- Initialize --
+    bool parent_found = false;
+
+    // Selected Via Nodes and Edges to x_new
+    // -> only used when constraints are active and first order retraction is required to connect near vertices to x_new
+    vector<Node> selected_via_nodes;
+    vector<Edge> selected_via_edges;
+
+    //Set nearest node id as parent id for new node
+    x_new.parent_id = nn_node.node_id;
+
+    //Choose Parent for Node, i.e. the one providing the lowest cost for reaching x_new from the start_node
+    for (int nv = 0; nv < near_vertices.size() ; nv++)
+    {
+
+       //Leave near vertices loop when "m_max_near_nodes" nodes have been considered as potential parents of x_new
+       if (m_max_near_nodes == nv)
+            break;
+
+       //Near Nodes of tree can be neglected if their cost-to-reach is already higher than the current cost of x_new, i.e. they can't provide a better path
+       if(tree->nodes[near_vertices[nv]].cost_reach.total < x_new.cost_reach.total)
+       {
+
+           //No Motion Constraints Active
+           if(m_constraint_active == false)
+           {
+
+               //Node and edge generated by "connectNodesInterpolation"
+               Node gen_node;
+               Edge gen_edge;
+               //Try to connect a near vertex to x_new
+               connectNodesInterpolation(tree, tree->nodes[near_vertices[nv]],x_new, m_num_traj_segments_interp, gen_node, gen_edge);
+
+               //If cost is smaller than the cost of reaching x_new via it's nearest neighbour (Note: "x_new.cost_reach" initially set by expansion towards x_rand
+               if(gen_node.cost_reach.total <= x_new.cost_reach.total)
+               {
+                    //Only if edge to x_new is valid
+                    int last_valid_node_idx = 0; //Not used but required by m_FeasibilityChecker->isEdgeValid-Function
+                    if(m_FeasibilityChecker->isEdgeValid(gen_edge,last_valid_node_idx))
+                    {
+                        //A parent for the new node has been found
+                        parent_found = true;
+
+                        //-----------------------------------------------------
+                        //Get current number of nodes in the tree (required to avoid incrementing the number of nodes while searching for the lowest cost nearest neighbour)
+                        int num_nodes_tree = tree->num_nodes;
+                        //Get current number of nodes in the tree (required to avoid incrementing the number of edges while searching for the lowest cost nearest neighbour)
+                        int num_edges_tree = tree->num_edges;
+
+                        //Set current near node
+                        Node curr_near_node = tree->nodes[near_vertices[nv]];
+
+                        bool rand_sample_reached = false;
+                        while(rand_sample_reached == false)
+                        {
+                            //Perform a step from current curr_near_node towards x_new using a fixed step size (returns true when random sample has been reached by expansion)
+                            Node original_x_new = x_new;
+                            rand_sample_reached = stepTowardsRandSample(curr_near_node, original_x_new, m_unconstraint_extend_step_factor);
+
+                            //Connect Nodes
+                            connectNodesInterpolation(tree, curr_near_node, original_x_new, m_num_traj_segments_interp, gen_node, gen_edge);
+
+                            if(rand_sample_reached == false)
+                            {
+                                //Modify node data
+                                gen_node.node_id = num_nodes_tree;
+                                //Increment local tree nodes counter
+                                num_nodes_tree++;
+                                //Set near vertex as parent of gen_node
+                                gen_node.parent_id = curr_near_node.node_id;
+                                required_parent = curr_near_node;
+                                //Modify edge data
+                                gen_edge.edge_id = num_edges_tree;
+                                //Increment local tree nodes counter
+                                num_edges_tree++;
+                                //Reset child node ID of edge, because original original_x_new has not been reached
+                                gen_edge.child_node_id = gen_node.node_id;  //Reset child node ID of edge, because original_x_new's ID is w.r.t. the other tree data structure
+
+                                //Collect current expanded node and edge (later added to the tree if x_new has been reached by a legal path)
+                                selected_via_nodes.push_back(gen_node);
+                                selected_via_edges.push_back(gen_edge);
+
+                                //Update curr_near_node in order to step further towards x_new
+                                curr_near_node = gen_node;
+
+
+                            }
+                            else
+                            {
+
+                                //Reset Node ID
+                                x_new.node_id = num_nodes_tree;
+                                //Set near vertex as parent of x_new
+                                x_new.parent_id = curr_near_node.node_id;
+                                required_parent = curr_near_node;
+                                //Set config and ee_pose of x_new to gen_node config
+                                x_new.config = gen_node.config;
+                                x_new.ee_pose = gen_node.ee_pose;
+                                //Update cost of reaching x_new
+                                x_new.cost_reach.total = gen_node.cost_reach.total;
+                                x_new.cost_reach.revolute = gen_node.cost_reach.revolute;
+                                x_new.cost_reach.prismatic = gen_node.cost_reach.prismatic;
+
+
+                                //Update edge
+                                e_new = gen_edge;
+                                e_new.edge_id = num_edges_tree;
+                                e_new.child_node_id = x_new.node_id;
+                            }
+
+                        }
+
+                        //Exit loop when first valid edge providing a lower cost path has been found
+                        // -> valid because near vertices are stored in order of ascending cost_reach
+                        break;
+
+                        //-----------------------------------------------------
+
+
+//                        //Set near vertex as parent of x_new
+//                        x_new.parent_id = tree->nodes[near_vertices[nv]].node_id;
+//                        //Set config and ee_pose of x_new to gen_node config
+//                        x_new.config = gen_node.config;
+//                        x_new.ee_pose = gen_node.ee_pose;
+//                        //Update cost of reaching x_new
+//                        x_new.cost_reach.total = gen_node.cost_reach.total;
+
+//                        //Update edge
+//                        e_new = gen_edge;
+
+//                        //Exit loop when first valid edge providing a lower cost path has been found
+//                        // -> valid because near vertices are stored in order of ascending cost_reach
+//                        break;
+
+
+                    } //End Reduced cost test
+               } //End Node reached test
+           }
+           else //Motion Constraints Active
+           {
+
+               //Generated node and edge by connectNodesInterpolation
+               Node gen_node;
+               Edge gen_edge;
+
+               // Via Nodes and Edges to x_new from current near vertex/node
+               vector<Node> via_nodes;
+               vector<Edge> via_edges;
+
+               //Set current near node
+               Node curr_x_near = tree->nodes[near_vertices[nv]];
+
+               //Get current number of nodes in the tree (required to avoid incrementing the number of nodes while searching for the lowest cost nearest neighbour)
+               int num_nodes_tree = tree->num_nodes;
+
+               //Get current number of nodes in the tree (required to avoid incrementing the number of edges while searching for the lowest cost nearest neighbour)
+               int num_edges_tree = tree->num_edges;
+
+
+               bool new_sample_reached = false;
+               while(new_sample_reached == false)
+               {
+                   //cout<<"In while loop"<<endl;
+
+                   //Perform a step from curr_x_near towards x_new using a fixed step size (returns true when x_new of other tree has been reached by expansion)
+                   Node exp_node_towards_x_new = x_new;
+                   new_sample_reached = stepTowardsRandSample(curr_x_near, exp_node_towards_x_new, m_constraint_extend_step_factor);
+
+                   //Projection only required if x_new has not been reached (because x_new.config is already on constraint manifold)
+                   if(new_sample_reached == false)
+                   {
+                       //Is task frame position defined global or w.r.t near node frame
+                       if(m_task_pos_global == false)
+                       {
+                           //Set Task frame position to position of nearest neighbour ee pose
+                           m_task_frame.p.x(curr_x_near.ee_pose[0]); //Set X Position
+                           m_task_frame.p.y(curr_x_near.ee_pose[1]); //Set Y Position
+                           m_task_frame.p.z(curr_x_near.ee_pose[2]); //Set Z Position
+                       }
+                       //Is task frame orientation defined global or w.r.t near node frame
+                       if(m_task_orient_global == false)
+                       {
+                           KDL::Rotation ee_orient = KDL::Rotation::Quaternion(curr_x_near.ee_pose[3],curr_x_near.ee_pose[4],curr_x_near.ee_pose[5],curr_x_near.ee_pose[6]);
+                           m_task_frame.M = ee_orient;
+                       }
+
+                       //Project sample onto constraint manifold
+                       bool projection_succeed = m_RobotMotionController->run_config_retraction(exp_node_towards_x_new.config, m_task_frame, m_grasp_transform, m_constraint_vector, m_coordinate_dev, m_max_projection_iter);
+
+
+                       if(projection_succeed == true && m_FeasibilityChecker->isConfigValid(exp_node_towards_x_new.config))
+                       {
+                           //Check if config retraction has projected the expanded config back onto the config of the near node "curr_x_near"
+                           // -> In this case the expansion is stuck, because each projected sample/config will be identical to the config of "curr_x_near"
+                           double dist_near_to_projected_sample = m_Heuristic.euclidean_joint_space_distance(curr_x_near.config,exp_node_towards_x_new.config);
+
+                           //Check additionally whether expansion has made progress towards x_new
+                           double dist_curr_x_near_to_x_new = m_Heuristic.euclidean_joint_space_distance(curr_x_near.config,x_new.config);
+                           double dist_projected_sample_to_x_new = m_Heuristic.euclidean_joint_space_distance(exp_node_towards_x_new.config,x_new.config);
+
+                           if(dist_near_to_projected_sample < m_min_projection_distance || dist_curr_x_near_to_x_new < dist_projected_sample_to_x_new)
+                           {
+                               //if(dist_near_to_projected_sample < m_min_projection_distance)
+                               //    cout<<"choose_node_parent_Interpolation: Sample projected back onto config of near node!"<<endl;
+                               //else
+                               //    cout<<"choose_node_parent_Interpolation: Projected sample is further away from x_new than x_near!"<<endl;
+                               break;
+                           }
+                           else
+                           {
+                               //cout<<"Projection generated new sample!"<<endl;
+                               //cout<<dist_near_to_projected_sample<<endl;
+                           }
+
+                           //Connect curr_x_near to projected sample
+                           bool connection_result = connectNodesInterpolation(tree, curr_x_near, exp_node_towards_x_new, m_num_traj_segments_interp, gen_node, gen_edge);
+
+                           //Check edge from curr_x_near to exp_node_towards_x_new for validity (collision check)
+                           if(connection_result == true && m_FeasibilityChecker->isEdgeValid(gen_edge))
+                           {
+
+                               //Modify node data
+                               gen_node.node_id = num_nodes_tree;
+                               //Increment local tree nodes counter
+                               num_nodes_tree++;
+                               //Set near vertex as parent of gen_node
+                               gen_node.parent_id = curr_x_near.node_id;
+                                required_parent = curr_x_near;
+                               //Modify edge data
+                               gen_edge.edge_id = num_edges_tree;
+                               //Increment local tree nodes counter
+                               num_edges_tree++;
+                               //Reset child node ID of edge, because original exp_node_towards_x_new has not been reached
+                               gen_edge.child_node_id = gen_node.node_id;
+
+                               //Collect current expanded node and edge (later added to the tree if x_new has been reached by a legal path)
+                               via_nodes.push_back(gen_node);
+                               via_edges.push_back(gen_edge);
+
+                               //Update curr_x_near in order to step further towards x_new
+                               curr_x_near = gen_node;
+
+                           }
+                           else
+                           {
+                               //cout<<"Edge to projected sample invalid"<<endl;
+                               break;
+                           }
+                        }
+                       else
+                       {
+                           //cout<<"Projection failed"<<endl;
+                           break;
+                       }
+                   }
+                   else
+                   {
+
+                       //cout<<"Sample reached!"<<endl;
+
+                       //Connect current curr_x_near to x_new
+                       bool connection_result = connectNodesInterpolation(tree, curr_x_near, x_new, m_num_traj_segments_interp, gen_node, gen_edge);
+
+                       //Compute solution path cost
+                       //double solution_cost = gen_node.cost_reach.total + x_new.cost_reach.total;
+
+                       //Check whether cost of path to x_new is lower thatn current cost of x_new
+                       if(gen_node.cost_reach.total <= x_new.cost_reach.total)
+                       {
+                           //Check edge from curr_x_near to exp_node_towards_x_new for validity (collision check)
+                           if(connection_result == true && m_FeasibilityChecker->isEdgeValid(gen_edge))
+                           {
+                               //A parent for the new node has been found
+                               parent_found = true;
+
+                               //Reset ID of x_new, because via nodes have been generated between the near vertex and x_new
+                               x_new.node_id = num_nodes_tree;
+
+                               //Set near vertex as parent of x_new
+                               x_new.parent_id = curr_x_near.node_id;
+                               required_parent = curr_x_near;
+                               //Set config and ee_pose of x_new to gen_node config
+                               x_new.config = gen_node.config;
+                               x_new.ee_pose = gen_node.ee_pose;
+                               //Update cost of reaching x_new
+                               x_new.cost_reach.total = gen_node.cost_reach.total;
+                               x_new.cost_reach.revolute = gen_node.cost_reach.revolute;
+                               x_new.cost_reach.prismatic = gen_node.cost_reach.prismatic;
+
+                               //Update edge
+                               e_new = gen_edge;
+                               //Reset ID of x_new, because via nodes have been generated between the near vertex and x_new
+                               e_new.edge_id = num_edges_tree;
+                               //Required since ID of e_new has changed due to via edges entered between near vertex and x_new
+                               e_new.child_node_id = x_new.node_id;
+
+                               //Set via nodes and edges of path providing the lowest cost to x_new
+                               selected_via_nodes.clear();
+                               selected_via_edges.clear();
+                               selected_via_nodes = via_nodes;
+                               selected_via_edges = via_edges;
+
+
+                               //Exit loop when first valid edge providing a lower cost path has been found
+                               // -> valid because near vertices are stored in order of ascending cost_reach
+                               //break;
+
+                               //Note: Final x_new and e_new will be added to tree in main planning loop !!!(see "run_planner" function)
+
+                           }//Edge validity check
+
+                       }//Solution path cost check
+                   }//Query Sample Reached FALSE 
+               }//END Loop While Sample Not Reached
+
+               //Exit near vertex loop when first valid edge providing a lower cost path has been found
+               // -> valid because near vertices are stored in order of ascending cost_reach
+               if(parent_found == true)
+                    break;
+
+           }// End Else Constraints Active
+
+        }// END Cost check x_near.cost_reach.total < x_new.cost_reach.total
+        else //We can leave the loop because all following near nodes will have higher cost-to-reach than x_new
+        {
+            break;
+        }
+
+    }//End iteration through near vertices
+
+
+
+    //Add via nodes and edges to the tree if a near vertex has found to provide a lower cost path to x_new
+    //if(m_constraint_active == true && parent_found == true)
+    if(parent_found == true)
+    {
+        //Insert via nodes and edges into tree
+        // -> Note: Final x_new and e_new will be added to tree in main planning loop !!!(see "run_planner" function)
+        for(int i = 0 ; i < selected_via_nodes.size() ; i++)
+            insertNode(tree, selected_via_edges[i] , selected_via_nodes[i], show_tree_vis);
+    }
+
+
+//    cout<<"Add edge to choose parent:"<<endl;
+//    cout<<x_new.parent_id<<endl;
+
+//    cout<<"Edge data choose parent:"<<endl;
+//    cout<<e_new.edge_id<<endl;
+//    cout<<e_new.root_node_id<<endl;
+//    cout<<e_new.child_node_id<<endl;
+
+
+//    cout<<"choose parent Parent data:"<<endl;
+//    cout<<"Tree name: "<<tree->name<<endl;
+//    cout<<tree->nodes[x_new.parent_id].node_id<<endl;
+//    cout<<tree->nodes[x_new.parent_id].cost_reach.total<<endl;
+//    cout<<tree->nodes[x_new.parent_id].outgoing_edges.size()<<endl;
+
+
+//    //Get time elapsed
+//    gettimeofday(&m_timer, NULL);
+//    double time_end = m_timer.tv_sec+(m_timer.tv_usec/1000000.0);
+//    printf("choose_node_parent_interpolation %.6lf seconds elapsed\n", time_end - time_start);
+
+
+    //Return flag whether a parent has been found
+    return required_parent;
+}
 
 //Choose Parent for x_new minimizing the cost of reaching x_new (given the set of vertices surrounding x_new as potential parents)
 bool BiRRTstarPlanner::choose_node_parent_interpolation(Rrt_star_tree *tree, vector<int> near_vertices, Node nn_node, Edge &e_new, Node &x_new, bool show_tree_vis)
