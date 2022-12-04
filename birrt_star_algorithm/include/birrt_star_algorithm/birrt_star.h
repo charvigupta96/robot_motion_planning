@@ -328,7 +328,7 @@ class BiRRTstarPlanner //: public robot_interface_definition::RobotInterface
     void jointConfigEllipseInitialization();
 
     //Sample Configuration (as JntArray) from Ellipse containing configurations that may improve current solution
-    KDL::JntArray sampleJointConfigfromEllipse_JntArray();
+    KDL::JntArray sampleJointConfigfromEllipse_JntArray(KDL::JntArray goalConfig);
 
     //Random Gradient Descent
     KDL::JntArray RGD(KDL::JntArray rconfig, KDL::JntArray goalConfig);
@@ -368,6 +368,9 @@ class BiRRTstarPlanner //: public robot_interface_definition::RobotInterface
 
     //Find the set of vertices in the vicinity of x_new
     vector<int> find_near_vertices_interpolation(Rrt_star_tree *tree, Node x_new);
+
+    //Choose Parent for x_new minimizing the cost of reaching x_new (given the set of vertices surrounding x_new as potential parents)
+    Node get_node_parent_interpolation(Rrt_star_tree *tree, vector<int> near_vertices, Node nn_node, Edge &e_new, Node &x_new, bool show_tree_vis);
 
     //Choose Parent for x_new minimizing the cost of reaching x_new (given the set of vertices surrounding x_new as potential parents)
     bool choose_node_parent_interpolation(Rrt_star_tree *tree, vector<int> near_vertices, Node nn_node, Edge &e_new, Node &x_new, bool show_tree_vis);
